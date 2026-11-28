@@ -180,7 +180,7 @@ function uniqueRows(items){const seen=new Set();return items.filter(r=>{const no
 function sectionForRow(r){
  const clean=v=>String(v||'').normalize('NFKC').trim().toLocaleLowerCase('ru').replace(/\\s+/g,' ');
  const sub=clean(r.subcategory||''),cat=clean(r.category||''),name=clean(r.name_ru||''),desc=clean(r.description_ru||'');
- const subText=sub||cat;
+ const subText=sub+' '+cat;
  const all=subText+' '+name+' '+desc;
  // Кальян всегда отдельно.
  if(/кальян|hookah/.test(all))return 'hookah';
@@ -190,6 +190,7 @@ function sectionForRow(r){
  if(/карась|сазан|судак|форел|семг|лосос|дорад|скумбр|окун|щук/.test(desc))return 'fish';
  // Пивные сеты — кухня, а пиво как напиток — бар.
  if(/пивн.*сет|сет.*пив/.test(subText))return 'kuhnya';
+ if(/безалкогольн.*пив/.test(subText+' '+name))return 'drinks';
  if(/бар|алкогол|водк|коньяк|виск|текил|ром|лик[её]р|вермут|пив|шампан|игрист|джин|бренди|whisk|vodka|beer|wine|cognac|rum|tequila/.test(subText))return 'bar';
  // Напитки — только безалкогольная группа.
  if(/напит|сусын|безалкогол|сок|вода|лимонад|чай|кофе|энергет|морс|компот|drink|juice|water/.test(subText))return 'drinks';
