@@ -178,13 +178,22 @@ function escapeHtml(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','
 function money(v){return v==null?'Цена уточняется':new Intl.NumberFormat('ru-RU').format(v)+' ₸'}
 function uniqueRows(items){const seen=new Set();return items.filter(r=>{const norm=v=>String(v??'').normalize('NFKC').trim().replace(/\\s+/g,' ').toLocaleLowerCase();const key=norm(r.name_ru)+'|||'+norm(r.name_kk)+'|||'+(r.price==null?'NULL':String(Number(r.price)));if(seen.has(key))return false;seen.add(key);return true})}
 function sectionForRow(r){
- const clean=v=>String(v||'').replace(/^[^\\p{L}\\p{N}]+/u,'').trim().toLocaleLowerCase('ru');
- const sub=clean(categoryName(r)),cat=clean(r.category),name=clean(r.name_ru);
- const text=sub+' '+cat+' '+name;
- if(/кальян|hookah/.test(text))return 'hookah';
- if(/блюд[аы] из рыб|рыбн|рыба|суп|сорпа|көже/.test(text))return 'fish';
- if(/барн|алкогол|водк|коньяк|виск|текил|ром |лик[её]р|вермут|пив|шампан|игрист|джин|brandy|whisk|vodka|beer|wine/.test(text))return 'bar';
- if(/напит|сусын|сок|вода|лимонад|чай|кофе|энергет|морс|компот|drink|juice|water/.test(text))return 'drinks';
+ const clean=v=>String(v||'').normalize('NFKC').trim().toLocaleLowerCase('ru').replace(/\\s+/g,' ');
+ const sub=clean(r.subcategory||''),cat=clean(r.category||''),name=clean(r.name_ru||''),desc=clean(r.description_ru||'');
+ const subText=sub||cat;
+ const all=subText+' '+name+' '+desc;
+ // Кальян всегда отдельно.
+ if(/кальян|hookah/.test(all))return 'hookah';
+ // Рыба и супы: категории, названия рыб и супы; рыбные наборы тоже сюда.
+ if(/рыб|суп|сорпа|көже|балық/.test(subText))return 'fish';
+ if(/карась|сазан|судак|форел|семг|лосос|дорад|скумбр|окун|щук|шорпа|том.?ям|рамен|уха/.test(name))return 'fish';
+ if(/карась|сазан|судак|форел|семг|лосос|дорад|скумбр|окун|щук/.test(desc))return 'fish';
+ // Пивные сеты — кухня, а пиво как напиток — бар.
+ if(/пивн.*сет|сет.*пив/.test(subText))return 'kuhnya';
+ if(/бар|алкогол|водк|коньяк|виск|текил|ром|лик[её]р|вермут|пив|шампан|игрист|джин|бренди|whisk|vodka|beer|wine|cognac|rum|tequila/.test(subText))return 'bar';
+ // Напитки — только безалкогольная группа.
+ if(/напит|сусын|безалкогол|сок|вода|лимонад|чай|кофе|энергет|морс|компот|drink|juice|water/.test(subText))return 'drinks';
+ if(/coca.?cola|pepsi|фанта|спрайт|ред булл|red bull|сок|лимонад|морс|компот|минерал|вода|чай|кофе/.test(name))return 'drinks';
  return 'kuhnya';
 }
 function sectionMeta(id){return ({kuhnya:['Кухня','🍽️'],fish:['Рыба и супы','🐟'],bar:['Барное меню','🍸'],drinks:['Напитки','🥤'],hookah:['Кальян','💨']})[id]}
