@@ -178,14 +178,13 @@ function escapeHtml(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','
 function money(v){return v==null?'Цена уточняется':new Intl.NumberFormat('ru-RU').format(v)+' ₸'}
 function uniqueRows(items){const seen=new Set();return items.filter(r=>{const norm=v=>String(v??'').normalize('NFKC').trim().replace(/\\s+/g,' ').toLocaleLowerCase();const key=norm(r.name_ru)+'|||'+norm(r.name_kk)+'|||'+(r.price==null?'NULL':String(Number(r.price)));if(seen.has(key))return false;seen.add(key);return true})}
 function sectionForRow(r){
- const sub=String(categoryName(r)).replace(/^[^\\p{L}\\p{N}]+/u,'').trim().toLocaleLowerCase('ru');
- if(['блюда из рыбы','рыба','рыбные блюда','супы','суп'].includes(sub))return 'fish';
- if(sub==='кальян')return 'hookah';
- const cat=String(r.category||'').replace(/^[^\\p{L}\\p{N}]+/u,'').trim().toLocaleLowerCase('ru');
- if(cat.includes('бар')||cat.includes('bar'))return 'bar';
- if(cat.includes('напит')||cat.includes('drink')||cat.includes('сусын'))return 'drinks';
- if(cat.includes('рыб')||cat.includes('суп'))return 'fish';
- if(cat.includes('кальян'))return 'hookah';
+ const clean=v=>String(v||'').replace(/^[^\\p{L}\\p{N}]+/u,'').trim().toLocaleLowerCase('ru');
+ const sub=clean(categoryName(r)),cat=clean(r.category),name=clean(r.name_ru);
+ const text=sub+' '+cat+' '+name;
+ if(/кальян|hookah/.test(text))return 'hookah';
+ if(/блюд[аы] из рыб|рыбн|рыба|суп|сорпа|көже/.test(text))return 'fish';
+ if(/барн|алкогол|водк|коньяк|виск|текил|ром |лик[её]р|вермут|пив|шампан|игрист|джин|brandy|whisk|vodka|beer|wine/.test(text))return 'bar';
+ if(/напит|сусын|сок|вода|лимонад|чай|кофе|энергет|морс|компот|drink|juice|water/.test(text))return 'drinks';
  return 'kuhnya';
 }
 function sectionMeta(id){return ({kuhnya:['Кухня','🍽️'],fish:['Рыба и супы','🐟'],bar:['Барное меню','🍸'],drinks:['Напитки','🥤'],hookah:['Кальян','💨']})[id]}
@@ -198,7 +197,7 @@ function renderMenu(){
  const order=['kuhnya','fish','bar','drinks','hookah'], sections=new Map(order.map(id=>[id,new Map()]));
  for(const r of visible){const id=sectionForRow(r),sub=categoryName(r),cats=sections.get(id);if(!cats.has(sub))cats.set(sub,[]);cats.get(sub).push(r)}
  const itemHtml=r=>`<div class="db-item ${r.is_available===false?'off':''}" data-cart-ready="true"><span><b>${escapeHtml(window.menuLanguage==='kk'?(r.name_kk||r.name_ru):r.name_ru)}</b>${r.photo_url?`<img src="${escapeHtml(r.photo_url)}" alt="" loading="lazy" style="display:block;width:100%;max-width:220px;max-height:150px;object-fit:cover;border-radius:8px;margin:8px 0">`:``}${(window.menuLanguage==='kk'?(r.description_kk||r.description_ru):r.description_ru)?`<small>${escapeHtml(window.menuLanguage==='kk'?(r.description_kk||r.description_ru):r.description_ru)}</small>`:''}${r.is_available===false?'<small class="stop">STOP</small>':''}</span><span class="price">${money(r.price)}</span>${r.price!=null?`<div class="item-actions"><button type="button" class="add-btn db-cart-add" ${r.is_available===false?'disabled':''} data-name="${escapeHtml(window.menuLanguage==='kk'?(r.name_kk||r.name_ru):r.name_ru)}" data-price="${Number(r.price)}" data-amount="${money(r.price)}" data-dual="false">+ В корзину · ${money(r.price)}</button></div>`:''}</div>`;
- dbMenu.innerHTML=order.filter(id=>sections.get(id).size).map(id=>{const [title,emoji]=sectionMeta(id);return `<section class="group" id="${id}"><h2><span class="nav-icon" aria-hidden="true">${emoji}</span> ${title}</h2><div class="grid">${[...sections.get(id).entries()].map(([sub,list])=>`<article class="category"><h3><span class="nav-icon" aria-hidden="true">${categoryIcon(sub)}</span> ${escapeHtml(sub)}</h3>${list.map(itemHtml).join('')}</article>`).join('')}</div></section>`}).join('');
+ dbMenu.innerHTML=order.map(id=>{const [title,emoji]=sectionMeta(id);return `<section class="group" id="${id}"><h2><span class="nav-icon" aria-hidden="true">${emoji}</span> ${title}</h2><div class="grid">${[...sections.get(id).entries()].map(([sub,list])=>`<article class="category"><h3><span class="nav-icon" aria-hidden="true">${categoryIcon(sub)}</span> ${escapeHtml(sub)}</h3>${list.map(itemHtml).join('')}</article>`).join('')}</div></section>`}).join('');
 }
 function showFallback(){document.querySelectorAll('body > main > section.group:not(#promotions)').forEach(x=>x.hidden=false);dbMenu.innerHTML=''}
 function getSeedRows(){
