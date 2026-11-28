@@ -179,10 +179,10 @@ function escapeHtml(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','
 function money(v){return v==null?'Цена уточняется':new Intl.NumberFormat('ru-RU').format(v)+' ₸'}
 function uniqueRows(items){const seen=new Set();return items.filter(r=>{const norm=v=>String(v??'').normalize('NFKC').trim().replace(/\\s+/g,' ').toLocaleLowerCase();const key=norm(r.name_ru)+'|||'+norm(r.name_kk)+'|||'+(r.price==null?'NULL':String(Number(r.price)));if(seen.has(key))return false;seen.add(key);return true})}
 function sectionForRow(r){
- const sub=String(categoryName(r)).trim().toLocaleLowerCase('ru');
+ const sub=String(categoryName(r)).replace(/^[^\\p{L}\\p{N}]+/u,'').trim().toLocaleLowerCase('ru');
  if(['блюда из рыбы','рыба','рыбные блюда','супы','суп'].includes(sub))return 'fish';
  if(sub==='кальян')return 'hookah';
- const cat=String(r.category||'').trim().toLocaleLowerCase('ru');
+ const cat=String(r.category||'').replace(/^[^\\p{L}\\p{N}]+/u,'').trim().toLocaleLowerCase('ru');
  if(cat.includes('бар')||cat.includes('bar'))return 'bar';
  if(cat.includes('напит')||cat.includes('drink')||cat.includes('сусын'))return 'drinks';
  if(cat.includes('рыб')||cat.includes('суп'))return 'fish';
@@ -204,8 +204,9 @@ function renderMenu(){
 function showFallback(){document.querySelectorAll('body > main > section.group:not(#promotions)').forEach(x=>x.hidden=false);dbMenu.innerHTML=''}
 function getSeedRows(){
  const out=[];let order=0;
+ const label=el=>{if(!el)return '';const copy=el.cloneNode(true);copy.querySelectorAll('.nav-icon').forEach(x=>x.remove());return copy.textContent.trim()};
  document.querySelectorAll('main > section.group:not(#promotions) .category').forEach(card=>{
-  const group=card.closest('.group');const cat=group?.querySelector(':scope > h2')?.textContent.trim()||'Меню';const sub=card.querySelector(':scope > h3')?.textContent.trim()||cat;
+  const group=card.closest('.group');const cat=label(group?.querySelector(':scope > h2'))||'Меню';const sub=label(card.querySelector(':scope > h3'))||cat;
   card.querySelectorAll('.item').forEach(item=>{const name=item.querySelector('.name')?.textContent.trim();const priceText=item.querySelector('.price')?.textContent||'';if(!name)return;const n=Number(priceText.replace(/[^0-9]/g,''));const desc=item.querySelector('.desc')?.innerText.trim()||'';out.push({category:cat,subcategory:sub,name_ru:name,name_kk:window.menuText(name),description_ru:desc,description_kk:window.menuText(desc),price:n>0?n:null,is_available:true,sort_order:order++})});
  });return out;
 }
