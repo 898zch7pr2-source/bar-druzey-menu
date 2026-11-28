@@ -176,7 +176,7 @@ let rows=[];let realtime=null;
 function categoryName(row){return row.subcategory||row.category||'Меню'}
 function escapeHtml(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function money(v){return v==null?'Цена уточняется':new Intl.NumberFormat('ru-RU').format(v)+' ₸'}
-function uniqueRows(items){const seen=new Set();return items.filter(r=>{const norm=v=>String(v??'').normalize('NFKC').trim().replace(/\\s+/g,' ').toLocaleLowerCase();const key=norm(r.name_ru)+'|||'+norm(r.name_kk)+'|||'+(r.price==null?'NULL':String(Number(r.price)));if(seen.has(key))return false;seen.add(key);return true})}
+function uniqueRows(items){const seen=new Set();return items.filter(r=>{const norm=v=>String(v??'').normalize('NFKC').trim().replace(/\s+/g,' ').toLocaleLowerCase();const key=norm(r.name_ru)+'|||'+norm(r.name_kk)+'|||'+(r.price==null?'NULL':String(Number(r.price)));if(seen.has(key))return false;seen.add(key);return true})}
 function sectionForRow(r){
  const clean=v=>String(v||'').normalize('NFKC').trim().toLocaleLowerCase('ru').replace(/\\s+/g,' ');
  const sub=clean(r.subcategory||''),cat=clean(r.category||''),name=clean(r.name_ru||''),desc=clean(r.description_ru||'');
