@@ -124,18 +124,31 @@
  const money=n=>new Intl.NumberFormat('ru-RU').format(n)+' ₸';
  function save(){localStorage.setItem(KEY,JSON.stringify(cart));render()}
  function add(name,price){name=window.menuOriginal(name);const key=name+'|'+price;cart[key]??={name,price,qty:0};cart[key].qty++;save()}
- document.querySelectorAll('.item').forEach(row=>{
-   const name=row.querySelector('.name')?.textContent.trim(), priceText=row.querySelector('.price')?.textContent.trim(); if(!name||!priceText)return;
+ const enhanceCartItems=(root=document)=>{
+  root.querySelectorAll('.item,.db-item').forEach(row=>{
+   if(row.dataset.cartReady==='true'||row.classList.contains('off'))return;
+   const nameEl=row.querySelector('.name')||row.querySelector('b');
+   const name=nameEl?.textContent.trim(),priceText=row.querySelector('.price')?.textContent.trim();
+   if(!name||!priceText)return;
    const amounts=[...priceText.matchAll(/\d[\d ]*/g)].map(m=>Number(m[0].replace(/\s/g,''))).filter(n=>n>0);
-   const actions=document.createElement('div'); actions.className='item-actions';
-   const dual=amounts.length>1 && name.includes('/');
+   if(!amounts.length)return;
+   row.dataset.cartReady='true';
+   const actions=document.createElement('div');actions.className='item-actions';
+   const dual=amounts.length>1&&name.includes('/');
    (dual?amounts.slice(0,2):amounts.slice(0,1)).forEach((price,i)=>{
-     const b=document.createElement('button');b.type='button';b.className='add-btn';b.dataset.amount=money(price);b.dataset.dual=String(dual);b.dataset.unit=i===0?'1 л':'0,5 л';
-     b.addEventListener('click',()=>add(dual?window.menuOriginal(name).replace(/ · .*$/,'')+' ('+(i===0?'1 л':'0,5 л')+')':name,price));actions.appendChild(b);
+    const b=document.createElement('button');b.type='button';b.className='add-btn';b.dataset.amount=money(price);b.dataset.dual=String(dual);b.dataset.unit=i===0?'1 л':'0,5 л';
+    b.addEventListener('click',()=>add(dual?window.menuOriginal(name).replace(/ · .*$/,'')+' ('+(i===0?'1 л':'0,5 л')+')':name,price));actions.appendChild(b);
    });
    if(actions.childElementCount)row.appendChild(actions);
- });
- window.refreshMenuLanguageControls=()=>document.querySelectorAll('.add-btn').forEach(b=>{b.textContent=(b.dataset.dual==='true'?window.menuText(b.dataset.unit):window.menuText('+ В корзину'))+' · '+b.dataset.amount});
+  });
+ };
+ enhanceCartItems();
+ const dbMenuRoot=document.getElementById('dbMenu');
+ if(dbMenuRoot)new MutationObserver(()=>enhanceCartItems(dbMenuRoot)).observe(dbMenuRoot,{childList:true,subtree:true});
+ window.refreshMenuLanguageControls=()=>{
+  enhanceCartItems(dbMenuRoot||document);
+  document.querySelectorAll('.add-btn').forEach(b=>{b.textContent=(b.dataset.dual==='true'?window.menuText(b.dataset.unit):window.menuText('+ В корзину'))+' · '+b.dataset.amount});
+ };
  window.refreshMenuLanguageControls();
  function render(){
    const entries=Object.entries(cart).filter(([,v])=>v.qty>0), count=entries.reduce((a,[,v])=>a+v.qty,0), subtotal=entries.reduce((a,[,v])=>a+v.qty*v.price,0), service=Math.round(subtotal*.10);
